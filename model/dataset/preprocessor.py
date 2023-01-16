@@ -18,9 +18,8 @@ output_folder = "processed"
 log_file = "log.txt"
 alphabet_paths = [f.path for f in os.scandir(hooktheory_folder) if f.is_dir()]
 headers = {
-    'User-agent':
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
-    "referer": "https://www.google.com/"
+    "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36",
+    "referer": "https://www.google.com/",
 }
 client_id = Path("spotify_client_id").read_text()
 client_secret = Path("spotify_client_secret").read_text()
@@ -29,7 +28,7 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id, client_sec
 
 def log(text):
     print(text)
-    with open(log_file, 'a') as log:
+    with open(log_file, "a") as log:
         log.write(f"{text}\n")
 
 
@@ -56,6 +55,7 @@ def process_song(artist, song, path):
 
     if add_spotify:
         audio_features = get_audio_features(f"{artist_name} - {song_name}")
+        print(f"audio_features: {audio_features}")
         if audio_features is None:
             return
 
@@ -67,13 +67,15 @@ def process_song(artist, song, path):
             json_data = json.load(json_file)
 
             # skip if no melodies
-            if len(json_data["tracks"]["melody"]) is 0 or all(
-                    [note["isRest"] for note in json_data["tracks"]["melody"]]):
+            if len(json_data["tracks"]["melody"]) == 0 or all(
+                [note["isRest"] for note in json_data["tracks"]["melody"]]
+            ):
                 continue
 
             # skip of no chords
-            if len(json_data["tracks"]["chord"]) is 0 or all(
-                    [chord["isRest"] for chord in json_data["tracks"]["chord"]]):
+            if len(json_data["tracks"]["chord"]) == 0 or all(
+                [chord["isRest"] for chord in json_data["tracks"]["chord"]]
+            ):
                 continue
 
             if add_lyrics:
@@ -82,18 +84,20 @@ def process_song(artist, song, path):
             if add_spotify:
                 json_data["audio_features"] = audio_features
 
-            output_name = f"{artist_name} - {song_name} - {f.replace('_roman.json', '')}.json"
-            with open(f"{output_folder}/{output_name}", 'w') as outfile:
+            output_name = (
+                f"{artist_name} - {song_name} - {f.replace('_roman.json', '')}.json"
+            )
+            with open(f"{output_folder}/{output_name}", "w") as outfile:
                 json.dump(json_data, outfile)
 
 
 def get_audio_features(search_string):
     results = sp.search(q=search_string, limit=1)
-    tracks = results['tracks']['items']
+    tracks = results["tracks"]["items"]
     if len(tracks) == 0:
         log(f"Spotify track not found for {search_string}")
     else:
-        track = results['tracks']['items'][0]
+        track = results["tracks"]["items"][0]
         id = track["id"]
 
         audio_features = sp.audio_features(id)[0]
@@ -114,7 +118,9 @@ def retrieve_lyrics_google(artist, song):
     print(f"Scraping {url}")
 
     while True:
-        soup = BeautifulSoup(requests.get(url, headers=headers).text, features="html.parser")
+        soup = BeautifulSoup(
+            requests.get(url, headers=headers).text, features="html.parser"
+        )
         captcha_message = soup.select(".g-recaptcha")
         if len(captcha_message) > 0:
             print("BLOCKED, sleeping...")
@@ -127,7 +133,7 @@ def retrieve_lyrics_google(artist, song):
         log(f"{artist} - {song}: no lyrics found")
         return None
 
-    lyrics = lyrics_elements[0].get_text(separator=u"\n")
+    lyrics = lyrics_elements[0].get_text(separator="\n")
     return lyrics
 
 
@@ -137,7 +143,9 @@ def retrieve_lyrics_musixmatch(artist, song):
 
     print(f"Scraping {url}")
     while True:
-        soup = BeautifulSoup(requests.get(url, headers=headers).text, features="html.parser")
+        soup = BeautifulSoup(
+            requests.get(url, headers=headers).text, features="html.parser"
+        )
         captcha_message = soup.select(".mxm-human-verify")
         if len(captcha_message) > 0:
             print("BLOCKED, sleeping...")
@@ -153,7 +161,9 @@ def retrieve_lyrics_musixmatch(artist, song):
 
     url = f"https://www.musixmatch.com{lyrics_links[0]['href']}"
     print(f"Scraping {url}")
-    soup = BeautifulSoup(requests.get(url, headers=headers).text, features="html.parser")
+    soup = BeautifulSoup(
+        requests.get(url, headers=headers).text, features="html.parser"
+    )
 
     lyrics_elements = soup.select(".mxm-lyrics")
 
@@ -175,7 +185,7 @@ def process_hooktheory():
                 process_song(artist, song, path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if os.path.isfile(log_file):
         os.remove(log_file)
     if os.path.isdir(output_folder):
@@ -183,4 +193,10 @@ if __name__ == '__main__':
     os.mkdir(output_folder)
     process_hooktheory()
 
-    print(f"Result: {len([name for name in os.listdir(output_folder) if os.path.isfile(name)])} samples")
+    samples = [
+        name
+        for name in os.listdir(output_folder)
+        if os.path.isfile(os.path.join(output_folder, name))
+    ]
+    print(f"Result: {len(samples)} samples")
+

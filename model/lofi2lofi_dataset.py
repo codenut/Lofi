@@ -31,5 +31,6 @@ class Lofi2LofiDataset(Dataset):
             "melody_notes": torch.tensor(sample["melody_notes"]),
             "tempo": sample["tempo"],
             "energy": sample["energy"],
-            "valence": sample["valence"]
+            "valence": sample["valence"],
         }
+

@@ -7,68 +7,60 @@ export const SAMPLE_DEFAULT_VOLUME = -6;
 
 /** A SampleGroup defines a collection of samples, as taken from samples.json */
 class SampleGroup {
-  name: string;
+    name: string;
 
-  volume: number;
+    volume: number;
 
-  size: number;
+    size: number;
 
-  energyRanges?: number[][];
+    energyRanges?: number[][];
 
-  public constructor(name: string, size: number, volume: number, energyRanges?: number[][]) {
-    this.name = name;
-    this.volume = SAMPLE_DEFAULT_VOLUME + volume;
-    this.energyRanges = energyRanges;
-    this.size = size;
-  }
-
-  /** Gets a random sample index, based on a seed number */
-  getRandomSample(seed: number) {
-    return randomFromInterval(0, this.size - 1, seed);
-  }
-
-  getSampleUrl(index: number) {
-    return `${SAMPLES_BASE_URL}/loops/${this.name}/${this.name}_${index + 1}.mp3`;
-  }
-
-  /** Returns sample-specific Tone.js filters */
-  getFilters(): any[] {
-    if (this.name.includes('drumloop')) {
-      return [
-        new Tone.Filter({
-          type: 'lowpass',
-          frequency: 2400,
-          Q: 0.5
-        })
-      ];
+    public constructor(name: string, size: number, volume: number, energyRanges?: number[][]) {
+        this.name = name;
+        this.volume = SAMPLE_DEFAULT_VOLUME + volume;
+        this.energyRanges = energyRanges;
+        this.size = size;
     }
-    return [];
-  }
+
+    /** Gets a random sample index, based on a seed number */
+    getRandomSample(seed: number) {
+        return randomFromInterval(0, this.size - 1, seed);
+    }
+
+    getSampleUrl(index: number) {
+        return `${SAMPLES_BASE_URL}/loops/${this.name}/${this.name}_${index + 1}.mp3`;
+    }
+
+    /** Returns sample-specific Tone.js filters */
+    getFilters(): any[] {
+        if (this.name.includes('drumloop')) {
+            return [
+                new Tone.Filter({
+                    type: 'lowpass',
+                    frequency: 2400,
+                    Q: 0.5,
+                }),
+            ];
+        }
+        return [];
+    }
 }
 
-export const SAMPLEGROUPS: Map<string, SampleGroup> = sampleConfig.loops.reduce(
-  (map, sampleGroup) => {
+export const SAMPLEGROUPS: Map<string, SampleGroup> = sampleConfig.loops.reduce((map, sampleGroup) => {
     map.set(
-      sampleGroup.name,
-      new SampleGroup(
         sampleGroup.name,
-        sampleGroup.size,
-        sampleGroup.volume,
-        sampleGroup.energyRanges
-      )
+        new SampleGroup(sampleGroup.name, sampleGroup.size, sampleGroup.volume, sampleGroup.energyRanges)
     );
     return map;
-  },
-  new Map()
-);
+}, new Map());
 
 /** Selects a suitable drumbeat based on BPM and energy value */
 export const selectDrumbeat = (bpm: number, energy: number): [string, number] => {
-  const sampleGroup = `drumloop${bpm}`;
+    const sampleGroup = `drumloop${bpm}`;
 
-  const index = SAMPLEGROUPS.get(sampleGroup).energyRanges.findIndex(
-    (range) => range[0] <= energy && range[1] >= energy
-  );
+    const index = SAMPLEGROUPS.get(sampleGroup).energyRanges.findIndex(
+        (range) => range[0] <= energy && range[1] >= energy
+    );
 
-  return [sampleGroup, index];
+    return [sampleGroup, index];
 };
