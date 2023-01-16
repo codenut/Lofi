@@ -228,9 +228,7 @@ class Player {
         let started = false;
         const chunks: any[] = [];
 
-        if (this.recorder.state === 'recording') {
-            this.recorder.stop();
-        }
+        this.stopRecord();
 
         // schedule events to do every 100ms
         Tone.Transport.scheduleRepeat((time) => {
@@ -243,7 +241,7 @@ class Player {
 
             if (!started) {
                 console.log('second', seconds, time);
-                this.recorder.start();
+                this.startRecord();
             }
 
             if (this.currentTrack.length - seconds < 0) {
@@ -274,6 +272,26 @@ class Player {
         }, 0.1);
 
         this.play();
+    }
+
+    stopRecord() {
+        try {
+            this.recorder.stop();
+        } catch (e: any) {
+            console.log('error stopping record.', e);
+        }
+    }
+
+    startRecord(retry: number = 3) {
+        try {
+            this.recorder.start();
+        } catch (e: any) {
+            console.error('error starting record.', e);
+            this.stopRecord();
+            if (retry > 0) {
+                this.startRecord(retry - 1);
+            }
+        }
     }
 
     /** Starts playback on the current track; the track must have been loaded */
